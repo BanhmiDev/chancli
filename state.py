@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import urwid
+from api import Api
 
 class State(object):
 
@@ -15,6 +16,11 @@ class State(object):
             ])
 
     @staticmethod
+    def list_threads(board, page):
+        result = Api().get_threads(board, page)
+        return result
+
+    @staticmethod
     def help_content():
         return urwid.Text([
             ('underline', "\nBasic Commands\n\n"),
@@ -22,7 +28,12 @@ class State(object):
             ('bold', "listboards"), " - list available boards aside their code\n",
             ('bold', "board <code>"), " - display the first page (ex: board g)\n",
             ('bold', "board <code> <page>"), " - display the nth page starting from 1\n",
-            ('bold', "archive <code>"), " - display archived threads from a board" 
+            ('bold', "archive <code>"), " - display archived threads from a board\n\n",
+            ('bold', "help"), " - show this page\n",
+            ('bold', "license"), " - display the license page\n",
+            ('bold', "exit/quit/q"), " - exit the application"
+
+
             ])
 
     @staticmethod
@@ -46,3 +57,4 @@ class State(object):
              "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n"
              "THE SOFTWARE.")
             ]) 
+

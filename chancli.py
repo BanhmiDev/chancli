@@ -3,6 +3,7 @@ from state import State
 from urwid import MetaSignals
 import urwid
 import sys
+import re
 
 class MainWindow(object):
 
@@ -33,9 +34,9 @@ class MainWindow(object):
     def build_ui(self):
         """Build the urwid UI."""
         self.header = urwid.Text("Chancli")
-        self.generic_output_walker = urwid.SimpleListWalker([])
-        self.generic_output_walker.append(State.splash_content())
-        self.body = urwid.ListBox(self.generic_output_walker)
+        self.content = urwid.SimpleListWalker([])
+        self.content.append(State.splash_content())
+        self.body = urwid.ListBox(self.content)
         self.divider = urwid.Text("Type help for instructions, exit to quit.")
         self.footer = urwid.Edit("> ")
 
@@ -73,48 +74,81 @@ class MainWindow(object):
         except KeyboardInterrupt:
             self.quit()
 
-    def print_out(self, text):
+    def print_content(self, text):
         """Print given text as content."""
         # Accept strings, convert them to urwid.Text instances
         if not isinstance(text, urwid.Text):
             text = urwid.Text(text)
 
-        self.generic_output_walker.append(text)
+        self.content.append(text)
+
+    def parse_input(self):
+        """Parse input data."""
+        text = self.footer.get_edit_text()
+
+        # Remove input after submitting
+        self.footer.set_edit_text("")
+
+        # input: description
+        # -------------------------------------------------------------
+        # exit, quit, q: exit the application
+        # help: show help page
+        # license: show license page
+        # board: trigger either "board <code>" or "board <code> <page>"
+        # archive: trigger "archive <code>"
+        # empty: return to splash screen
+        # else: invalid command
+
+        # Todo: sum up command execution in one if clause
+        #       remove startwith and check regex only (?)
+
+        del self.content[:] # Remove previous content
+
+        if text in ('exit', 'quit', 'q'):
+            self.quit()
+        elif text == "help":
+            self.print_content(State.help_content())
+            self.divider.set_text("Help page")
+        elif text == "license":
+            self.print_content(State.license_content())
+            self.divider.set_text("License page")
+        elif text.startswith("board"):
+            arg1 = re.match(' \w+$', text[5:]) # board <code>
+            arg2 = re.match(' \w+ \w+$', text[5:]) # board <code> <page>
+
+            if arg1:
+                self.print_content(State.list_threads(arg1.group().strip(), 1))
+                self.divider.set_text("Watching board /" + arg1.group().strip() + "/ page 1")
+            elif arg2:
+                self.print_content(State.list_threads(arg2.group().strip(), 1))
+                self.divider.set_text("Watching board /" + arg2.group().strip() + "/ page 1")
+            else:
+                self.divider.set_text("Invalid arguments. Use board <code> or board <code> <page>.")
+        elif text.startswith("archive"):
+            arg1 = re.match(' \w+$', text[5:])
+        elif text.strip() == "":
+            self.print_content(State.splash_content())
+            self.divider.set_text("Type help for instructions, exit to quit.")
+        else:
+            self.print_content(State.splash_content())
+            self.divider.set_text("Invalid command: " + text)
 
     def keypress(self, size, key):
         """Handle user input."""
         urwid.emit_signal(self, "keypress", size, key)
+
+        # Focus management
+        if key == "up" or key == "down":
+            self.context.set_focus("body")
+        else:
+            self.context.set_focus("footer")
 
         # New dimension on resize
         if key == "window resize":
             self.size = self.ui.get_cols_rows()
         elif key == "enter":
             # Parse input data
-            text = self.footer.get_edit_text()
-
-            # Remove input after submitting
-            self.footer.set_edit_text("")
-
-            if text in ('exit', 'quit', 'q'):
-                self.quit()
-            elif text == "help":
-                del self.generic_output_walker[:]
-
-                self.print_out(State.help_content())
-                self.divider.set_text("Help page")
-            elif text == "license":
-                del self.generic_output_walker[:]
-
-                self.print_out(State.license_content())
-                self.divider.set_text("License page")
-            elif text.strip() == "":
-                # Empty input, return to splash screen
-                del self.generic_output_walker[:]
-
-                self.print_out(State.splash_content())
-                self.divider.set_text("Type help for instructions, exit to quit.")
-            else:
-                self.divider.set_text("Invalid command: " + text)
+            self.parse_input()
         elif key in ("ctrl d", 'ctrl c'):
             # Quit by key combination
             self.quit()
