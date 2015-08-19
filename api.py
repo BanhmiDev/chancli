@@ -21,14 +21,16 @@ class Api(object):
 
     def parse_comment(self, html):
         """Strip most HTML tags."""
-        html = html.replace("<br>", '\n')
+        # Indent comment string
+        html = html.replace("<br>", '\n    ')
         html = html.replace("&gt;", '>')
         html = html.replace("&quot;", '"')
 
         # After preserving some tags, strip all of them
         s = MLStripper()
         s.feed(html)
-        return s.get_data()
+
+        return "    " + s.get_data() # Indent first line of comment
     
     def get_threads(self, board, page=1):
         """Return first threads by their first post, board and page."""
