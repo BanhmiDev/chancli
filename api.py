@@ -45,8 +45,8 @@ class Api(object):
         if data:
             data = json.loads(data)
             for post in data["threads"]:
-                result += str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
-                result += self.parse_comment(post["posts"][0]["com"] + "\n\n")
+                result += "\n\nNo. " + str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
+                result += self.parse_comment(post["posts"][0]["com"])
 
         return result
 
