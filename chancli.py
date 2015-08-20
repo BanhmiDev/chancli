@@ -94,6 +94,7 @@ class MainWindow(object):
         # exit, quit, q: exit the application
         # help: show help page
         # license: show license page
+        # thread: open specific thread
         # board: trigger either "board <code>" or "board <code> <page>"
         # archive: trigger "archive <code>"
         # empty: return to splash screen
@@ -112,6 +113,17 @@ class MainWindow(object):
         elif text == "license":
             self.print_content(State.license_content())
             self.divider.set_text("License page")
+        elif text.startswith("thread"):
+            arg1 = re.match(' \w+ \w+$', text[6:]) # thread <board> <id>
+            
+            if arg1:
+                arg1 = arg1.group().strip()
+                arg1 = arg1.split(" ") # Split to get real arguments
+                self.print_content(State.list_thread(arg1[0], arg1[1]))
+                self.divider.set_text("Watching thread " + arg1[1] + " in board /" + arg1[0] + "/")
+            else:
+                self.print_content(State.splash_content())
+                self.divider.set_text("Invalid arguments. Use thread <id>.")
         elif text.startswith("board"):
             arg1 = re.match(' \w+$', text[5:]) # board <code>
             arg2 = re.match(' \w+ \w+$', text[5:]) # board <code> <page>
@@ -120,8 +132,10 @@ class MainWindow(object):
                 self.print_content(State.list_threads(arg1.group().strip(), 1))
                 self.divider.set_text("Watching board /" + arg1.group().strip() + "/ page 1")
             elif arg2:
-                self.print_content(State.list_threads(arg2.group().strip(), 1))
-                self.divider.set_text("Watching board /" + arg2.group().strip() + "/ page 1")
+                arg2 = arg2.group().strip()
+                arg2= arg2.split(" ") # Split to get real arguments
+                self.print_content(State.list_threads(arg2[0], arg2[1]))
+                self.divider.set_text("Watching board /" + arg2[0] + "/ page " + arg2[1])
             else:
                 self.print_content(State.splash_content())
                 self.divider.set_text("Invalid arguments. Use board <code> or board <code> <page>.")
