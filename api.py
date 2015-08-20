@@ -40,7 +40,7 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/" + str(page) + ".json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "Could not generate thread list\n" + str(error)
+            return "\nCould not generate thread list\n\nPossible Reasons:\n- invalid board or page\n\n" + str(error)
 
         if data:
             data = json.loads(data)
@@ -61,7 +61,7 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/thread/" + str(thread_id) + ".json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "Could not generate thread\n" + str(error)
+            return "\nCould not generate thread\n\nPossible reasons:\n- invalid board or thread id\n\n" + str(error)
 
         if data:
             data = json.loads(data)
@@ -81,6 +81,11 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/archive.json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "Could not generate thread list\n" + str(error)
+            return "\nCould not generate archived thread list\n\nPossible reasons:\n- invalid board\n\n" + str(error)
+
+        if data:
+            data = json.loads(data)
+            for index, thread in enumerate(data): # index can be specified to quickly open the thread (see: open <index>)
+                result += "\n[" + str(index) + "] " + str(thread)
 
         return result

@@ -139,8 +139,16 @@ class MainWindow(object):
             else:
                 self.print_content(State.splash_content())
                 self.divider.set_text("Invalid arguments. Use board <code> or board <code> <page>.")
-        elif text.startswith("archive"):
-            arg1 = re.match(' \w+$', text[5:])
+        elif text.startswith("archive"): # archive <board>
+            arg1 = re.match(' \w+$', text[7:])
+
+            if arg1:
+                self.print_content(State.list_archived_threads(arg1.group().strip()))
+                self.divider.set_text("Watching archive of /" + arg1.group().strip() + "/")
+            else:
+                self.print_content(State.splash_content())
+                self.divider.set_text("Invalid arguments. Use archive <board>.")
+
         elif text.strip() == "":
             self.print_content(State.splash_content())
             self.divider.set_text("Type help for instructions, exit to quit.")

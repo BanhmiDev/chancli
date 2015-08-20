@@ -26,6 +26,11 @@ class State(object):
         return result
 
     @staticmethod
+    def list_archived_threads(board):
+        result = Api().get_archive(board)
+        return result
+
+    @staticmethod
     def help_content():
         return urwid.Text([
             ('underline', "\nBasic Commands\n\n"),
