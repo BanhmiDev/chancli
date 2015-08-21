@@ -17,6 +17,15 @@ class MLStripper(HTMLParser):
     def get_data(self):
         return ''.join(self.fed)
 
+class ApiError(object):
+
+    @staticmethod
+    def get_error(target, error):
+        """Could not generate thread list
+        """
+        string = "\nCould not generate %s\nFull error code: %s" % (target, error)
+        return string
+
 class Api(object):
 
     def parse_comment(self, html):
@@ -40,11 +49,13 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/" + str(page) + ".json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "\nCould not generate thread list\n\nPossible Reasons:\n- invalid board or page\n\n" + str(error)
+            return ApiError.get_error("threads list", error)
+        except urllib.error.URLError as error:
+            return ApiError.get_error("threads list", error)
 
         if data:
             data = json.loads(data)
-            for index, post in enumerate(data["threads"]): # index can be specified to quickly open the thread (see: open <index>)
+            for index, post in enumerate(data["threads"], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
                 result += "\n\n [" + str(index) + "] No. " + str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
                 if "com" in post["posts"][0]: # Check for empty comment
                     result += self.parse_comment(post["posts"][0]["com"])
@@ -61,7 +72,9 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/thread/" + str(thread_id) + ".json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "\nCould not generate thread\n\nPossible reasons:\n- invalid board or thread id\n\n" + str(error)
+            return ApiError.get_error("thread list", error)
+        except urllib.error.URLError as error:
+            return ApiError.get_error("thread list", error)
 
         if data:
             data = json.loads(data)
@@ -81,11 +94,13 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/archive.json").read().decode("utf-8")
         except urllib.error.HTTPError as error:
-            return "\nCould not generate archived thread list\n\nPossible reasons:\n- invalid board\n\n" + str(error)
+            return ApiError.get_error("archive list", error)
+        except urllib.error.URLError as error:
+            return ApiError.get_error("archive list", error)
 
         if data:
             data = json.loads(data)
-            for index, thread in enumerate(data): # index can be specified to quickly open the thread (see: open <index>)
+            for index, thread in enumerate(data, 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
                 result += "\n[" + str(index) + "] " + str(thread)
 
         return result
