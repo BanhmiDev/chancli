@@ -21,8 +21,7 @@ class ApiError(object):
 
     @staticmethod
     def get_error(target, error):
-        """Could not generate thread list
-        """
+        """Return error message."""
         string = "\nCould not generate %s\nFull error code: %s" % (target, error)
         return string
 
@@ -42,9 +41,11 @@ class Api(object):
         return "    " + s.get_data() # Indent first line of comment
     
     def get_threads(self, board, page=1):
-        """Return first threads by their first post, board and page."""
+        """Return a dict containing:
+        the board, a list of thread IDs, a string to render from
+        """
         data = None
-        result = ""
+        result = {'board': board, 'list': [], 'string': ''}
 
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/" + str(page) + ".json").read().decode("utf-8")
@@ -56,11 +57,12 @@ class Api(object):
         if data:
             data = json.loads(data)
             for index, post in enumerate(data["threads"], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
-                result += "\n\n [" + str(index) + "] No. " + str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
+                result['list'].append(post['posts'][0]['no'])
+                result["string"] += "\n\n [" + str(index) + "] No. " + str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
                 if "com" in post["posts"][0]: # Check for empty comment
-                    result += self.parse_comment(post["posts"][0]["com"])
+                    result["string"] += self.parse_comment(post["posts"][0]["com"])
                 else:
-                    result += "    ---"
+                    result["string"] += "    ---"
 
         return result
 

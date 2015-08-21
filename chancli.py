@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-from state import State
-from urwid import MetaSignals
-import urwid
-import sys
 import re
+import sys
+import urwid
+from urwid import MetaSignals
+
+from state import State
 
 class MainWindow(object):
 
@@ -24,6 +25,8 @@ class MainWindow(object):
         self.mark_quit = False
         self.sender = sender
 
+        self.state = State()
+
     def main(self):
         """Entry point."""
         self.ui = urwid.raw_display.Screen()
@@ -35,7 +38,7 @@ class MainWindow(object):
         """Build the urwid UI."""
         self.header = urwid.Text("Chancli")
         self.content = urwid.SimpleListWalker([])
-        self.content.append(State.splash_content())
+        self.content.append(self.state.splash_content())
         self.body = urwid.ListBox(self.content)
         self.divider = urwid.Text("Type help for instructions, exit to quit.")
         self.footer = urwid.Edit("> ")
@@ -94,67 +97,36 @@ class MainWindow(object):
         # exit, quit, q: exit the application
         # help: show help page
         # license: show license page
+        # open: open specific thread by index (shown on the screen)
         # thread: open specific thread
         # board: trigger either "board <code>" or "board <code> <page>"
         # archive: trigger "archive <code>"
         # empty: return to splash screen
         # else: invalid command
 
-        # Todo: sum up command execution in one if clause
-        #       remove startwith and check regex only (?)
-
         del self.content[:] # Remove previous content
 
         if text in ('exit', 'quit', 'q'):
             self.quit()
         elif text == "help":
-            self.print_content(State.help_content())
-            self.divider.set_text("Help page")
+            _content = self.state.help()
         elif text == "license":
-            self.print_content(State.license_content())
-            self.divider.set_text("License page")
+            _content = self.state.license()
+        elif text.startswith("open"):
+            _content = self.state.open(text)
         elif text.startswith("thread"):
-            arg1 = re.match(' \w+ \w+$', text[6:]) # thread <board> <id>
-            
-            if arg1:
-                arg1 = arg1.group().strip()
-                arg1 = arg1.split(" ") # Split to get real arguments
-                self.print_content(State.list_thread(arg1[0], arg1[1]))
-                self.divider.set_text("Watching thread " + arg1[1] + " in board /" + arg1[0] + "/")
-            else:
-                self.print_content(State.splash_content())
-                self.divider.set_text("Invalid arguments. Use thread <id>.")
+            _content = self.state.thread(text)
         elif text.startswith("board"):
-            arg1 = re.match(' \w+$', text[5:]) # board <code>
-            arg2 = re.match(' \w+ \w+$', text[5:]) # board <code> <page>
-
-            if arg1:
-                self.print_content(State.list_threads(arg1.group().strip(), 1))
-                self.divider.set_text("Watching board /" + arg1.group().strip() + "/ page 1")
-            elif arg2:
-                arg2 = arg2.group().strip()
-                arg2= arg2.split(" ") # Split to get real arguments
-                self.print_content(State.list_threads(arg2[0], arg2[1]))
-                self.divider.set_text("Watching board /" + arg2[0] + "/ page " + arg2[1])
-            else:
-                self.print_content(State.splash_content())
-                self.divider.set_text("Invalid arguments. Use board <code> or board <code> <page>.")
+            _content = self.state.board(text)
         elif text.startswith("archive"): # archive <board>
-            arg1 = re.match(' \w+$', text[7:])
-
-            if arg1:
-                self.print_content(State.list_archived_threads(arg1.group().strip()))
-                self.divider.set_text("Watching archive of /" + arg1.group().strip() + "/")
-            else:
-                self.print_content(State.splash_content())
-                self.divider.set_text("Invalid arguments. Use archive <board>.")
-
+            _content = self.state.empty()
         elif text.strip() == "":
-            self.print_content(State.splash_content())
-            self.divider.set_text("Type help for instructions, exit to quit.")
+            _content = self.state.empty()
         else:
-            self.print_content(State.splash_content())
-            self.divider.set_text("Invalid command: " + text)
+            _content = self.state.invalid(text)
+
+        self.print_content(_content['content'])
+        self.divider.set_text(_content['status'])
 
     def keypress(self, size, key):
         """Handle user input."""
