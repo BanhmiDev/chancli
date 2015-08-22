@@ -12,8 +12,10 @@ class MLStripper(HTMLParser):
         self.strict = False
         self.convert_charrefs = False
         self.fed = []
+
     def handle_data(self, d):
         self.fed.append(d)
+
     def get_data(self):
         return ''.join(self.fed)
 
@@ -22,8 +24,7 @@ class ApiError(object):
     @staticmethod
     def get_error(target, error):
         """Return error message."""
-        string = "\nCouldnot generate {}\nFull error code: {}".format(target, error)
-        return string
+        return "\nCould not generate {}\nFull error code: {}".format(target, error)
 
 class Api(object):
 

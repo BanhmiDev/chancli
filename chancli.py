@@ -106,7 +106,7 @@ class MainWindow(object):
 
         del self.content[:] # Remove previous content
 
-        if text in ('exit', 'quit', 'q'):
+        if text in ("exit", "quit", "q"):
             self.quit()
         elif text == "help":
             _content = self.state.help()
@@ -127,8 +127,7 @@ class MainWindow(object):
         else:
             _content = self.state.invalid(text)
 
-        if _content['content'] != "":
-            self.print_content(_content['content'])
+        self.print_content(_content['content'])
         self.divider.set_text(_content['status'])
 
     def keypress(self, size, key):
@@ -147,7 +146,7 @@ class MainWindow(object):
         elif key == "enter":
             # Parse input data
             self.parse_input()
-        elif key in ("ctrl d", 'ctrl c'):
+        elif key in ("ctrl d", "ctrl c"):
             # Quit by key combination
             self.quit()
 

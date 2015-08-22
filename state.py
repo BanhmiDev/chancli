@@ -17,15 +17,16 @@ class State(object):
         """Open thread by index shown on the screen."""
         if self.current_threads:
             arg = re.match(' \w+$', text[4:])
-            index = int(arg.group().strip()) - 1 # Indices are incremented by 1
-            
-            board = self.current_threads['board']
-            thread_id = self.current_threads['list'][index] # Get from the saved thread list
+            index = arg.group().strip()
 
-            if arg:
+            # Check if regex matches + convertible to integer + index in list
+            if arg and index.isdigit() and index in self.current_threads['list']:
+                index = int(index) - 1 # Indices are incremented by 1
+                board = self.current_threads['board']
+                thread_id = self.current_threads['list'][index] # Get from the saved thread list
                 return {'content': self.list_thread(board, thread_id), 'status': "Watching board /%s/, thread %s" % (board, thread_id)}
             else:
-                return {'content': self.splash_content(), 'status': "Invalid arguments. Use open <index>."}
+                return {'content': self.splash_content(), 'status': "Invalid argument. Wrong index? Use open <index>."}
         else:
             return {'content': self.splash_content(), 'status': "Open a board first to issue this command."}
 
