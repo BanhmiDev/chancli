@@ -70,9 +70,11 @@ class Api(object):
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/{}/{}.json".format(board, page)).read().decode('utf-8')
         except urllib.error.HTTPError as error:
-            return ApiError.get_error("threads list", error)
+            result['string'] = ApiError.get_error("threads list", error)
+            return result
         except urllib.error.URLError as error:
-            return ApiError.get_error("threads list", error)
+            result['string'] = ApiError.get_error("threads list", error)
+            return result
 
         if data:
             data = json.loads(data)
@@ -110,19 +112,25 @@ class Api(object):
         return result
 
     def get_archive(self, board):
+        """Return a dict containing:
+        the board, a list of thread IDs, a string to render from
+        """
         data = None
-        result = ""
+        result = {'board': board, 'list': [], 'string': ''}
 
         try:
             data = urllib.request.urlopen("https://a.4cdn.org/{}/archive.json".format(board)).read().decode('utf-8')
         except urllib.error.HTTPError as error:
-            return ApiError.get_error("archive list", error)
+            result['string'] = ApiError.get_error("archive list", error)
+            return result
         except urllib.error.URLError as error:
-            return ApiError.get_error("archive list", error)
+            result['string'] = ApiError.get_error("archive list", error)
+            return result
 
         if data:
             data = json.loads(data)
             for index, thread in enumerate(data, 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
-                result += "\n[{}] {}".format(index, thread)
+                result['list'].append(thread)
+                result['string'] += "\n[{}] {}".format(index, thread)
 
         return result

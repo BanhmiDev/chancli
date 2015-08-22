@@ -121,7 +121,7 @@ class MainWindow(object):
         elif text.startswith("board"):
             _content = self.state.board(text)
         elif text.startswith("archive"): # archive <board>
-            _content = self.state.empty()
+            _content = self.state.archive(text)
         elif text.strip() == "":
             _content = self.state.empty()
         else:

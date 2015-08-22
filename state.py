@@ -19,12 +19,17 @@ class State(object):
             arg = re.match(' \w+$', text[4:])
             index = arg.group().strip()
 
-            # Check if regex matches + convertible to integer + index in list
-            if arg and index.isdigit() and index in self.current_threads['list']:
+            # Check if convertible to integer
+            if index.isdigit():
                 index = int(index) - 1 # Indices are incremented by 1
+            else:
+                index = -1
+
+            # Check if regex matches + index in list
+            if arg and -1 < index < len(self.current_threads['list']):
                 board = self.current_threads['board']
                 thread_id = self.current_threads['list'][index] # Get from the saved thread list
-                return {'content': self.list_thread(board, thread_id), 'status': "Watching board /%s/, thread %s" % (board, thread_id)}
+                return {'content': self.api.get_thread(board, thread_id), 'status': "Watching board /{}/, thread {}".format(board, thread_id)}
             else:
                 return {'content': self.splash_content(), 'status': "Invalid argument. Wrong index? Use open <index>."}
         else:
@@ -39,7 +44,7 @@ class State(object):
             arg = arg.split(" ") # Split to get real arguments
 
             result = self.api.get_thread(arg[0], arg[1])
-            return {'content': result, 'status': "Watching board /%s/, thread %s" % (arg[0], arg[1])}
+            return {'content': result, 'status': "Watching board /{}/, thread {}".format(arg[0], arg[1])}
         else:
             return {'content': self.splash_content(), 'status': "Invalid arguments. Use thread <board> <id>."}
 
@@ -49,19 +54,28 @@ class State(object):
 
         if arg1:
             arg1 = arg1.group().strip()
-            return {'content': self.list_threads(arg1, 1), 'status': "Watching board /%s/ page 1" % arg1}
+            return {'content': self.list_threads(arg1, 1), 'status': "Watching board /{}/ page 1".format(arg1)}
         elif arg2:
             arg2 = arg2.group().strip()
             arg2 = arg2.split(" ") # Split to get real arguments
-            return {'content': self.list_threads(arg2[0], arg2[1]), 'status': "Watching board /%s/ page %s" % (arg2[0], arg2[1])}
+            return {'content': self.list_threads(arg2[0], arg2[1]), 'status': "Watching board /{}/ page {}".format(arg2[0], arg2[1])}
         else:
             return {'content': self.splash_content(), 'status': "Invalid arguments. Use board <code> or board <code> <page>."}
+
+    def archive(self, text):
+        arg = re.match(' \w+$', text[7:])
+
+        if arg:
+            arg = arg.group().strip()
+            return {'content': self.list_archives(arg), 'status': "Watching archive of /{}/".format(arg)}
+        else:
+            return {'content': self.splash_content(), 'status': "Invalid argument. Use archive <code>."}
 
     def empty(self):
         return {'content': self.splash_content(), 'status': "Type help for instructions, exit to quit."}
 
     def invalid(self, text):
-        return {'content': self.splash_content(), 'status': "Invalid command: %s" % text}
+        return {'content': self.splash_content(), 'status': "Invalid command: {}".format(text)}
 
     @staticmethod
     def splash_content():
@@ -73,21 +87,6 @@ class State(object):
              "   \____|_| |_/_/   \_\_| \_|  \____|_____|___|\n"
              "        chancli version 0.0.1")
             ])
-
-    def list_thread(self, board, thread_id):
-        result = self.api.get_thread(board, thread_id)
-        return result
-
-    def list_threads(self, board, page):
-        result = self.api.get_threads(board, page)
-        self.current_threads = result
-
-        return result['string']
-
-    @staticmethod
-    def list_archived_threads(board):
-        result = self.api.get_archive(board)
-        return result
 
     @staticmethod
     def help():
@@ -130,3 +129,17 @@ class State(object):
                 "THE SOFTWARE."),
             'status': "License page"
         }
+
+    def list_threads(self, board, page):
+        """Temporary save data for later use."""
+        result = self.api.get_threads(board, page)
+        self.current_threads = result
+
+        return result['string']
+
+    def list_archives(self, board):
+        """Temporary save data for later use."""
+        result = self.api.get_archive(board)
+        self.current_threads = result
+
+        return result['string']
