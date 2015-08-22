@@ -112,6 +112,8 @@ class MainWindow(object):
             _content = self.state.help()
         elif text == "license":
             _content = self.state.license()
+        elif text == "listboards":
+            _content = self.state.listboards()
         elif text.startswith("open"):
             _content = self.state.open(text)
         elif text.startswith("thread"):
@@ -125,7 +127,8 @@ class MainWindow(object):
         else:
             _content = self.state.invalid(text)
 
-        self.print_content(_content['content'])
+        if _content['content'] != "":
+            self.print_content(_content['content'])
         self.divider.set_text(_content['status'])
 
     def keypress(self, size, key):

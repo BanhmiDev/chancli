@@ -10,6 +10,9 @@ class State(object):
         self.current_threads = [] # Save temporary data
         self.api = Api() # Api calls
 
+    def listboards(self):
+        return {'content': self.api.get_boards(), 'status': "Listing boards' information"}
+
     def open(self, text):
         """Open thread by index shown on the screen."""
         if self.current_threads:

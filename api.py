@@ -22,7 +22,7 @@ class ApiError(object):
     @staticmethod
     def get_error(target, error):
         """Return error message."""
-        string = "\nCould not generate %s\nFull error code: %s" % (target, error)
+        string = "\nCouldnot generate {}\nFull error code: {}".format(target, error)
         return string
 
 class Api(object):
@@ -39,6 +39,25 @@ class Api(object):
         s.feed(html)
 
         return "    " + s.get_data() # Indent first line of comment
+
+    def get_boards(self):
+        """Return boards' information."""
+        data = None
+        result = ""
+
+        try:
+            data = urllib.request.urlopen("https://a.4cdn.org/boards.json").read().decode('utf-8')
+        except urllib.error.HTTPError as error:
+            return ApiError.get_error("boards list", error)
+        except urllib.error.URLError as error:
+            return ApiError.get_error("boards list", error)
+
+        if data:
+            data = json.loads(data)
+            for board in data['boards']:
+                result += "/{}/ - {}\n".format(board['board'], board['title'])
+
+        return result
     
     def get_threads(self, board, page=1):
         """Return a dict containing:
@@ -48,7 +67,7 @@ class Api(object):
         result = {'board': board, 'list': [], 'string': ''}
 
         try:
-            data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/" + str(page) + ".json").read().decode("utf-8")
+            data = urllib.request.urlopen("https://a.4cdn.org/{}/{}.json".format(board, page)).read().decode('utf-8')
         except urllib.error.HTTPError as error:
             return ApiError.get_error("threads list", error)
         except urllib.error.URLError as error:
@@ -56,13 +75,13 @@ class Api(object):
 
         if data:
             data = json.loads(data)
-            for index, post in enumerate(data["threads"], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
+            for index, post in enumerate(data['threads'], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
                 result['list'].append(post['posts'][0]['no'])
-                result["string"] += "\n\n [" + str(index) + "] No. " + str(post["posts"][0]["no"]) + " " + post["posts"][0]["now"] + "\n"
-                if "com" in post["posts"][0]: # Check for empty comment
-                    result["string"] += self.parse_comment(post["posts"][0]["com"])
+                result['string'] += "\n\n[{}] No. {} {}\n".format(index, post['posts'][0]['no'], post['posts'][0]['now'])
+                if "com" in post['posts'][0]: # Check for empty comment
+                    result['string'] += self.parse_comment(post['posts'][0]['com'])
                 else:
-                    result["string"] += "    ---"
+                    result['string'] += "    ---"
 
         return result
 
@@ -72,7 +91,7 @@ class Api(object):
         result = ""
 
         try:
-            data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/thread/" + str(thread_id) + ".json").read().decode("utf-8")
+            data = urllib.request.urlopen("https://a.4cdn.org/{}/thread/{}.json".format(board, thread_id)).read().decode('utf-8')
         except urllib.error.HTTPError as error:
             return ApiError.get_error("thread list", error)
         except urllib.error.URLError as error:
@@ -81,9 +100,9 @@ class Api(object):
         if data:
             data = json.loads(data)
             for post in data["posts"]:
-                result += "\n\nNo. " + str(post["no"]) + " " + post["now"] + "\n"
+                result += "\n\nNo. {} {}\n".format(post['no'], post['now'])
                 if "com" in post: # Check for empty comment
-                    result += self.parse_comment(post["com"])
+                    result += self.parse_comment(post['com'])
                 else:
                     result += "    ---"
 
@@ -94,7 +113,7 @@ class Api(object):
         result = ""
 
         try:
-            data = urllib.request.urlopen("https://a.4cdn.org/" + board + "/archive.json").read().decode("utf-8")
+            data = urllib.request.urlopen("https://a.4cdn.org/{}/archive.json".format(board)).read().decode('utf-8')
         except urllib.error.HTTPError as error:
             return ApiError.get_error("archive list", error)
         except urllib.error.URLError as error:
@@ -103,6 +122,6 @@ class Api(object):
         if data:
             data = json.loads(data)
             for index, thread in enumerate(data, 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
-                result += "\n[" + str(index) + "] " + str(thread)
+                result += "\n[{}] {}".format(index, thread)
 
         return result
