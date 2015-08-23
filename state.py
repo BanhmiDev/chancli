@@ -1,21 +1,52 @@
 #!/usr/bin/env python3
 import re
+import json
 import urwid
 
 from api import Api
+from helper import Helper
 
 class State(object):
 
     def __init__(self):
-        self.current_threads = [] # Save temporary data
-        self.api = Api() # Api calls
+        # Api calls
+        self.api = Api()
+
+        # Save temporary data for quick opening (open <index> command)
+        self.current_threads = {'board': None, 'list': []}
+
+        # JSON data
+        self.boards_json = None
+        self.threads_json = None
+        self.thread_json = None
+        self.archive_json = None
 
     def listboards(self):
-        return {'content': self.api.get_boards(), 'status': "Listing boards' information"}
+        # Do not call the API more than once
+        if not self.boards_json:
+            data = self.api.get_boards()
+
+            # Determine if an error occured
+            if not data['error']:
+                self.boards_json = data['result']
+            else:
+                return data['error']
+
+        # Used for urwid.Text which is going to be displayed
+        text = [("\nDisplaying all boards. Codes are "), (('highlight'), "highlighted"), ".\n\n"]
+
+        if self.boards_json:
+            data = json.loads(self.boards_json)
+            for board in data['boards']:
+                text.append("/")
+                text.append(('highlight', board['board']))
+                text.append("/ - {}\n".format(board['title']))
+
+        return {'content': urwid.Text(text), 'status': "Displaying all boards"}
 
     def open(self, text):
         """Open thread by index shown on the screen."""
-        if self.current_threads:
+        if self.current_threads['board']:
             arg = re.match(' \w+$', text[4:])
             index = arg.group().strip()
 
@@ -29,11 +60,55 @@ class State(object):
             if arg and -1 < index < len(self.current_threads['list']):
                 board = self.current_threads['board']
                 thread_id = self.current_threads['list'][index] # Get from the saved thread list
-                return {'content': self.api.get_thread(board, thread_id), 'status': "Watching board /{}/, thread {}".format(board, thread_id)}
-            else:
-                return {'content': self.splash_content(), 'status': "Invalid argument. Wrong index? Use open <index>."}
+                
+                return self.thread("thread {} {}".format(board, thread_id))
+            #else:
+            #    return {'content': False, 'status': "Invalid argument. Wrong index? Use open <index>."}
+        #else:
+        #    return {'content': False, 'status': "Open a board first to issue this command."}
+
+    def board(self, text):
+        arg1 = re.match(' \w+$', text[5:]) # board <code>
+        arg2 = re.match(' \w+ \w+$', text[5:]) # board <code> <page>
+
+        if arg1:
+            board = arg1.group().strip()
+            page = 1
+        elif arg2:
+            arg2 = arg2.group().strip()
+            arg2 = arg2.split(" ") # Split to get real arguments
+            board = arg2[0]
+            page = arg2[1]
+        #else:
+        #    return {'content': False, 'status': "Invalid arguments. Use board <code> or board <code> <page>."}
+
+        data = self.api.get_threads(board, page)
+
+        # Determine if an error occured
+        if not data['error']:
+            self.threads_json = data['result']
         else:
-            return {'content': self.splash_content(), 'status': "Open a board first to issue this command."}
+            return data['error']
+
+        # Used for urwid.Text which is going to be displayed
+        text = [("\nDisplaying page "), (('highlight'), str(page)), " of /", (('highlight'), str(board)), "/.\n\n"]
+
+        if self.threads_json:
+            self.current_threads['board'] = board
+            del self.current_threads['list'][:] # Reset previous temporary data
+
+            data = json.loads(self.threads_json)
+            for index, post in enumerate(data['threads'], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
+                self.current_threads['list'].append(post['posts'][0]['no']) # Quick opening
+                text.append(('highlight', "[{}]".format(index)))
+                text.append(" No. {} {}\n".format(post['posts'][0]['no'], post['posts'][0]['now']))
+                # Check for empty comment
+                if "com" in post['posts'][0]:
+                    text.append(Helper.parse_comment(post['posts'][0]['com']))
+                else:
+                    text.append("    ---\n\n")
+
+        return {'content': urwid.Text(text), 'status': "Displaying page {} of /{}/".format(page, board)}
 
     def thread(self, text):
         """Open thread by specifying board and id."""
@@ -43,42 +118,73 @@ class State(object):
             arg = arg.group().strip()
             arg = arg.split(" ") # Split to get real arguments
 
-            result = self.api.get_thread(arg[0], arg[1])
-            return {'content': result, 'status': "Watching board /{}/, thread {}".format(arg[0], arg[1])}
-        else:
-            return {'content': self.splash_content(), 'status': "Invalid arguments. Use thread <board> <id>."}
+            board = arg[0]
+            thread_id = arg[1]
+        #else:
+        #    return {'content': False, 'status': "Invalid arguments. Use thread <board> <id>."}
 
-    def board(self, text):
-        arg1 = re.match(' \w+$', text[5:]) # board <code>
-        arg2 = re.match(' \w+ \w+$', text[5:]) # board <code> <page>
+        data = self.api.get_thread(board, thread_id)
 
-        if arg1:
-            arg1 = arg1.group().strip()
-            return {'content': self.list_threads(arg1, 1), 'status': "Watching board /{}/ page 1".format(arg1)}
-        elif arg2:
-            arg2 = arg2.group().strip()
-            arg2 = arg2.split(" ") # Split to get real arguments
-            return {'content': self.list_threads(arg2[0], arg2[1]), 'status': "Watching board /{}/ page {}".format(arg2[0], arg2[1])}
+        # Determine if an error occured
+        if not data['error']:
+            self.thread_json = data['result']
         else:
-            return {'content': self.splash_content(), 'status': "Invalid arguments. Use board <code> or board <code> <page>."}
+            return data['error']
+
+        # Used for urwid.Text which is going to be displayed
+        text = [("\nDisplaying thread "), (('highlight'), str(thread_id)), " in /", (('highlight'), str(board)), "/.\n\n"]
+
+        if self.thread_json:
+            data = json.loads(self.thread_json)
+            for post in data["posts"]:
+                text.append("No. {} {}\n".format(post['no'], post['now']))
+                # Check for empty comment
+                if "com" in post:
+                    text.append(Helper.parse_comment(post['com']))
+                else:
+                    text.append("    ---\n\n")
+
+        return {'content': urwid.Text(text), 'status': "Displaying thread {} in /{}/".format(thread_id, board)}
 
     def archive(self, text):
         arg = re.match(' \w+$', text[7:])
 
         if arg:
-            arg = arg.group().strip()
-            return {'content': self.list_archives(arg), 'status': "Watching archive of /{}/".format(arg)}
+            board = arg.group().strip()
+        #else:
+        #    return {'content': False, 'status': "Invalid argument. Use archive <code>."}
+
+        data = self.api.get_archive(board)
+
+        # Determine if an error occured
+        if not data['error']:
+            self.archive_json = data['result']
         else:
-            return {'content': self.splash_content(), 'status': "Invalid argument. Use archive <code>."}
+            return data['error']
+
+        # Used for urwid.Text which is going to be displayed
+        text = [("\nDisplaying archive"), " of /", (('highlight'), str(board)), "/.\n\n"]
+
+        if self.archive_json:
+            self.current_threads['board'] = board
+            del self.current_threads['list'][:] # Reset previous temporary data
+
+            data = json.loads(self.archive_json)
+            for index, thread in enumerate(data, 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
+                self.current_threads['list'].append(thread) # Quick opening
+                text.append(('highlight', "[{}]".format(index)))
+                text.append(" No. {}\n".format(thread))
+
+        return {'content': urwid.Text(text), 'status': "Displaying archive of /{}/".format(board)}
 
     def empty(self):
-        return {'content': self.splash_content(), 'status': "Type help for instructions, exit to quit."}
+        return {'content': False, 'status': "Type help for instructions, exit to quit."}
 
     def invalid(self, text):
-        return {'content': self.splash_content(), 'status': "Invalid command: {}".format(text)}
+        return {'content': False, 'status': "Invalid command: {}".format(text)}
 
     @staticmethod
-    def splash_content():
+    def splash():
         return urwid.Text([
             ("\n\n    ____ _   _    _    _   _    ____ _     ___\n"
              "   / ___| | | |  / \  | \ | |  / ___| |   |_ _|\n"
@@ -94,15 +200,15 @@ class State(object):
             'content': urwid.Text([
                 ('underline', "\nBasic Commands\n\n"),
                 ('Chancli utilizes the official 4chan API, which can be found at https://github.com/4chan/4chan-API.\n\n'),
-                ('bold', "listboards"), " - list available boards aside their code\n",
-                ('bold', "open <id>"), " - open a thread from the current window, specified by its index\n",
-                ('bold', "thread <board> <id>"), " - open a specific thread\n",
-                ('bold', "board <code>"), " - display the first page (ex: board g)\n",
-                ('bold', "board <code> <page>"), " - display the nth page starting from 1\n",
-                ('bold', "archive <code>"), " - display archived threads from a board\n\n",
-                ('bold', "help"), " - show this page\n",
-                ('bold', "license"), " - display the license page\n",
-                ('bold', "exit/quit/q"), " - exit the application"
+                ('highlight', "listboards"), " - list available boards aside their code\n",
+                ('highlight', "open <id>"), " - open a thread from the current window, specified by its index\n",
+                ('highlight', "board <code>"), " - display the first page (ex: board g)\n",
+                ('highlight', "board <code> <page>"), " - display the nth page starting from 1\n",
+                ('highlight', "thread <board> <id>"), " - open a specific thread\n",
+                ('highlight', "archive <code>"), " - display archived threads from a board\n\n",
+                ('highlight', "help"), " - show this page\n",
+                ('highlight', "license"), " - display the license page\n",
+                ('highlight', "exit/quit/q"), " - exit the application"
                 ]),
             'status': "Help page"
         }
@@ -129,17 +235,3 @@ class State(object):
                 "THE SOFTWARE."),
             'status': "License page"
         }
-
-    def list_threads(self, board, page):
-        """Temporary save data for later use."""
-        result = self.api.get_threads(board, page)
-        self.current_threads = result
-
-        return result['string']
-
-    def list_archives(self, board):
-        """Temporary save data for later use."""
-        result = self.api.get_archive(board)
-        self.current_threads = result
-
-        return result['string']

@@ -13,9 +13,10 @@ class MainWindow(object):
 
     _palette = [
         ('divider', 'black', 'light gray'),
-        ('text', 'light gray', 'default'),
-        ('bold', 'light gray', 'default', 'bold'),
-        ('underline', 'light gray', 'default', 'underline'),
+        ('text', 'white', 'default'),
+        ('highlight', 'yellow', 'default'),
+        ('underline', 'yellow', 'default', 'underline'),
+        ('bold', 'yellow', 'default', 'bold'),
         ('body', 'text'),
         ('footer', 'text'),
         ('header', 'text'),
@@ -38,7 +39,7 @@ class MainWindow(object):
         """Build the urwid UI."""
         self.header = urwid.Text("Chancli")
         self.content = urwid.SimpleListWalker([])
-        self.content.append(self.state.splash_content())
+        self.content.append(self.state.splash())
         self.body = urwid.ListBox(self.content)
         self.divider = urwid.Text("Type help for instructions, exit to quit.")
         self.footer = urwid.Edit("> ")
@@ -71,6 +72,8 @@ class MainWindow(object):
                 handle_mouse=False,
                 unhandled_input=input_handler,
             )
+        # Disable bold on bright fonts
+        self.main_loop.screen.set_terminal_properties(bright_is_bold=False)
 
         try:
             self.main_loop.run()
@@ -104,8 +107,6 @@ class MainWindow(object):
         # empty: return to splash screen
         # else: invalid command
 
-        del self.content[:] # Remove previous content
-
         if text in ("exit", "quit", "q"):
             self.quit()
         elif text == "help":
@@ -127,7 +128,9 @@ class MainWindow(object):
         else:
             _content = self.state.invalid(text)
 
-        self.print_content(_content['content'])
+        if _content['content']: # Only update if content given
+            del self.content[:] # Remove previous content
+            self.print_content(_content['content'])
         self.divider.set_text(_content['status'])
 
     def keypress(self, size, key):
