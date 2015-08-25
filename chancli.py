@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import re
 import sys
 import urwid
 from urwid import MetaSignals
@@ -100,11 +99,12 @@ class MainWindow(object):
         # exit, quit, q: exit the application
         # help: show help page
         # license: show license page
+        # listboards: list all available boards
         # open: open specific thread by index (shown on the screen)
         # thread: open specific thread
         # board: trigger either "board <code>" or "board <code> <page>"
         # archive: trigger "archive <code>"
-        # empty: return to splash screen
+        # empty: show initial status message
         # else: invalid command
 
         if text in ("exit", "quit", "q"):

@@ -62,10 +62,10 @@ class State(object):
                 thread_id = self.current_threads['list'][index] # Get from the saved thread list
                 
                 return self.thread("thread {} {}".format(board, thread_id))
-            #else:
-            #    return {'content': False, 'status': "Invalid argument. Wrong index? Use open <index>."}
-        #else:
-        #    return {'content': False, 'status': "Open a board first to issue this command."}
+            else:
+                return {'content': False, 'status': "Invalid argument. Wrong index? Use open <index>."}
+        else:
+            return {'content': False, 'status': "Open a board first to issue this command."}
 
     def board(self, text):
         arg1 = re.match(' \w+$', text[5:]) # board <code>
@@ -79,8 +79,8 @@ class State(object):
             arg2 = arg2.split(" ") # Split to get real arguments
             board = arg2[0]
             page = arg2[1]
-        #else:
-        #    return {'content': False, 'status': "Invalid arguments. Use board <code> or board <code> <page>."}
+        else:
+            return {'content': False, 'status': "Invalid arguments. Use board <code> or board <code> <page>."}
 
         data = self.api.get_threads(board, page)
 
@@ -120,8 +120,8 @@ class State(object):
 
             board = arg[0]
             thread_id = arg[1]
-        #else:
-        #    return {'content': False, 'status': "Invalid arguments. Use thread <board> <id>."}
+        else:
+            return {'content': False, 'status': "Invalid arguments. Use thread <board> <id>."}
 
         data = self.api.get_thread(board, thread_id)
 
@@ -151,8 +151,8 @@ class State(object):
 
         if arg:
             board = arg.group().strip()
-        #else:
-        #    return {'content': False, 'status': "Invalid argument. Use archive <code>."}
+        else:
+            return {'content': False, 'status': "Invalid argument. Use archive <code>."}
 
         data = self.api.get_archive(board)
 
