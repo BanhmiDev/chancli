@@ -13,6 +13,11 @@ class MainWindow(object):
     _palette = [
         ('divider', 'black', 'light gray'),
         ('text', 'white', 'default'),
+
+        ('number', 'dark green', 'default'),
+        ('time', 'dark gray', 'default'),
+        ('quote', 'light green', 'default'),
+
         ('highlight', 'yellow', 'default'),
         ('underline', 'yellow', 'default', 'underline'),
         ('bold', 'yellow', 'default', 'bold'),

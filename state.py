@@ -100,13 +100,14 @@ class State(object):
             data = json.loads(self.threads_json)
             for index, post in enumerate(data['threads'], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
                 self.current_threads['list'].append(post['posts'][0]['no']) # Quick opening
-                text.append(('highlight', "[{}]".format(index)))
-                text.append(" No. {} {}\n".format(post['posts'][0]['no'], post['posts'][0]['now']))
+                text.append(('highlight', "[{}] ".format(index)))
+                text.append(('number', "No. {} ".format(post['posts'][0]['no'])))
+                text.append(('time', "{}".format(post['posts'][0]['now'])))
                 # Check for empty comment
                 if "com" in post['posts'][0]:
-                    text.append(Helper.parse_comment(post['posts'][0]['com']))
+                    text = text + Helper.parse_comment(post['posts'][0]['com'])
                 else:
-                    text.append("    ---\n\n")
+                    text.append("- no comment -\n")
 
         return {'content': urwid.Text(text), 'status': "Displaying page {} of /{}/".format(page, board)}
 
@@ -137,12 +138,13 @@ class State(object):
         if self.thread_json:
             data = json.loads(self.thread_json)
             for post in data["posts"]:
-                text.append("No. {} {}\n".format(post['no'], post['now']))
+                text.append(('number', "No. {} ".format(post['no'])))
+                text.append(('time', "{}".format(post['now'])))
                 # Check for empty comment
                 if "com" in post:
-                    text.append(Helper.parse_comment(post['com']))
+                    text = text + Helper.parse_comment(post['com'])
                 else:
-                    text.append("    ---\n\n")
+                    text.append("- no comment -\n")
 
         return {'content': urwid.Text(text), 'status': "Displaying thread {} in /{}/".format(thread_id, board)}
 

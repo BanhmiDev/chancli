@@ -1,3 +1,5 @@
+import re
+import urwid
 from html.parser import HTMLParser
 
 # https://stackoverflow.com/questions/753052/strip-html-from-strings-in-python
@@ -15,18 +17,27 @@ class MLStripper(HTMLParser):
         return ''.join(self.fed)
 
 class Helper:
-
     @staticmethod
     def parse_comment(html):
-        """Strip most HTML tags."""
-        # Indent comment string
-        html = html.replace("<br>", '\n    ')
+        """Return urwid.Text formatted string."""
+        # Replace HTML breaks with \n
+        html = html.replace("<br>", '\n')
         html = html.replace("&gt;", '>')
         html = html.replace("&quot;", '"')
 
-        # After preserving some tags, strip all of them
         s = MLStripper()
         s.feed(html)
+        html = s.get_data()
 
-        # Indent first line of comment, add newline at the end
-        return "    " + s.get_data() + "\n\n"
+        html_list = re.split(r'\n', html)
+
+        for index, line in enumerate(html_list):
+            html_list[index] += "\n"
+
+            if re.search('>', line): # Green-texting
+                html_list[index] = ('quote', line)
+
+        html_list.insert(0, "\n") # Newline at the beginning
+        html_list.append("\n") # Newline at the end
+
+        return html_list
