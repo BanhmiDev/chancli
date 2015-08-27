@@ -35,7 +35,7 @@ class Helper:
             html_list[index] += "\n"
 
             if re.search('>', line): # Green-texting
-                html_list[index] = ('quote', line)
+                html_list[index] = ('quote', line + "\n")
 
         html_list.insert(0, "\n") # Newline at the beginning
         html_list.append("\n") # Newline at the end

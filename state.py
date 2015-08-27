@@ -107,7 +107,7 @@ class State(object):
                 if "com" in post['posts'][0]:
                     text = text + Helper.parse_comment(post['posts'][0]['com'])
                 else:
-                    text.append("- no comment -\n")
+                    text.append("\n- no comment -\n\n")
 
         return {'content': urwid.Text(text), 'status': "Displaying page {} of /{}/".format(page, board)}
 
@@ -144,7 +144,7 @@ class State(object):
                 if "com" in post:
                     text = text + Helper.parse_comment(post['com'])
                 else:
-                    text.append("- no comment -\n")
+                    text.append("\n- no comment -\n\n")
 
         return {'content': urwid.Text(text), 'status': "Displaying thread {} in /{}/".format(thread_id, board)}
 
