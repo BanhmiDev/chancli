@@ -2,6 +2,8 @@ chancli
 =======
 Browsing 4chan in terminal style.
 
+![Screenshot](https://raw.github.com/gimu/chancli/master/screenshot.png)
+
 ## Dependencies
 chancli is written for Python 3 and requires the [urwid](https://pypi.python.org/pypi/urwid/) package.
 
