@@ -90,8 +90,10 @@ class State(object):
         else:
             return data['error']
 
-        # Used for urwid.Text which is going to be displayed
-        text = [("\nDisplaying page "), (('highlight'), str(page)), " of /", (('highlight'), str(board)), "/.\n\n"]
+        # List containing urwid widgets - to be wrapped up by urwid.Pile
+        content = [
+            urwid.Text([("\nDisplaying page "), (('highlight'), str(page)), " of /", (('highlight'), str(board)), "/.\n"])
+        ]
 
         if self.threads_json:
             self.current_threads['board'] = board
@@ -99,17 +101,24 @@ class State(object):
 
             data = json.loads(self.threads_json)
             for index, post in enumerate(data['threads'], 1): # index starting from 1 to open threads without specifying full id (see: open <index>)
+
                 self.current_threads['list'].append(post['posts'][0]['no']) # Quick opening
-                text.append(('highlight', "[{}] ".format(index)))
-                text.append(('number', "No. {} ".format(post['posts'][0]['no'])))
-                text.append(('time', "{}".format(post['posts'][0]['now'])))
+                _header = [
+                    ('highlight', "({}) ".format(index)),
+                    ('number', "No. {} ".format(post['posts'][0]['no'])),
+                    ('time', "{}".format(post['posts'][0]['now']))
+                ]
+
                 # Check for empty comment
                 if "com" in post['posts'][0]:
-                    text = text + Helper.parse_comment(post['posts'][0]['com'])
+                    _text = Helper.parse_comment(post['posts'][0]['com'])
                 else:
-                    text.append("\n- no comment -\n\n")
+                    _text = "- no comment -\n"
 
-        return {'content': urwid.Text(text), 'status': "Displaying page {} of /{}/".format(page, board)}
+                content.append(urwid.Padding(urwid.Text(_header), 'left', left=0))
+                content.append(urwid.Padding(urwid.Text(_text), 'left', left=4)) # Indent text content from header
+
+        return {'content': urwid.Pile(content), 'status': "Displaying page {} of /{}/".format(page, board)}
 
     def thread(self, text):
         """Open thread by specifying board and id."""
@@ -132,21 +141,28 @@ class State(object):
         else:
             return data['error']
 
-        # Used for urwid.Text which is going to be displayed
-        text = [("\nDisplaying thread "), (('highlight'), str(thread_id)), " in /", (('highlight'), str(board)), "/.\n\n"]
+        # List containing urwid widgets - to be wrapped up by urwid.Pile
+        content = [
+            urwid.Text([("\nDisplaying thread "), (('highlight'), str(thread_id)), " in /", (('highlight'), str(board)), "/.\n"])
+        ]
 
         if self.thread_json:
             data = json.loads(self.thread_json)
             for post in data["posts"]:
-                text.append(('number', "No. {} ".format(post['no'])))
-                text.append(('time', "{}".format(post['now'])))
-                # Check for empty comment
-                if "com" in post:
-                    text = text + Helper.parse_comment(post['com'])
-                else:
-                    text.append("\n- no comment -\n\n")
+                _header = [
+                    ('number', "No. {} ".format(post['no'])),
+                    ('time', "{}".format(post['now']))
+                ]
 
-        return {'content': urwid.Text(text), 'status': "Displaying thread {} in /{}/".format(thread_id, board)}
+                if "com" in post:
+                    _text = Helper.parse_comment(post['com'])
+                else:
+                    _text = "- no comment -\n"
+
+                content.append(urwid.Padding(urwid.Text(_header), 'left', left=0))
+                content.append(urwid.Padding(urwid.Text(_text), 'left', left=4)) # Indent text content from header
+
+        return {'content': urwid.Pile(content), 'status': "Displaying thread {} in /{}/".format(thread_id, board)}
 
     def archive(self, text):
         arg = re.match(' \w+$', text[7:])

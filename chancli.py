@@ -74,8 +74,9 @@ class MainWindow(object):
                 self.context,
                 screen=self.ui,
                 handle_mouse=False,
-                unhandled_input=input_handler,
-            )
+                unhandled_input=input_handler
+        )
+
         # Disable bold on bright fonts
         self.main_loop.screen.set_terminal_properties(bright_is_bold=False)
 
@@ -87,7 +88,7 @@ class MainWindow(object):
     def print_content(self, text):
         """Print given text as content."""
         # Accept strings, convert them to urwid.Text instances
-        if not isinstance(text, urwid.Text):
+        if not isinstance(text, (urwid.Text, urwid.Pile)):
             text = urwid.Text(text)
 
         self.content.append(text)
