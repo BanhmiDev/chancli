@@ -46,8 +46,9 @@ class State(object):
 
     def open(self, text):
         """Open thread by index shown on the screen."""
-        if self.current_threads['board']:
-            arg = re.match(' \w+$', text[4:])
+        arg = re.match(' \w+$', text[4:])
+
+        if self.current_threads['board'] and arg:
             index = arg.group().strip()
 
             # Check if convertible to integer
